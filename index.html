@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AnyVan — Move Anything, Anywhere</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    :root {
+      --accent: #3BB5EA;
+      --accent-rgb: 59, 181, 234;
+      --accent-light: #63C7F0;
+      --bg: #ffffff;
+      --bg-soft: #f5f7f6;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-muted: #9ca3af;
+      --border: rgba(0, 0, 0, 0.08);
+      --card-bg: rgba(0, 0, 0, 0.03);
+      --card-border: rgba(0, 0, 0, 0.07);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: auto; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      overflow-x: hidden;
+    }
+
+    ::selection { background: var(--accent); color: #fff; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f0f0f0; }
+    ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--accent), var(--accent-light)); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.4); }
+
+    /* ── SCROLL PROGRESS ── */
+    #scrollProgress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      z-index: 10000;
+      transition: width 0.1s linear;
+    }
+
+    /* ── STARSCAPE ── */
+    #starscape {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.25;
+    }
+
+    /* ── LOADER ── */
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 20px;
+      transition: opacity 0.6s ease;
+    }
+    .loader-logo { max-width: 120px; }
+    .loader-logo img { width: 100%; }
+    .loader-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .loader-bar-track {
+      width: 200px; height: 3px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .loader-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* ── NAVBAR ── */
+    #navbar {
+      position: fixed;
+      top: 12px; left: 0; right: 0;
+      z-index: 1000;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nav-inner {
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 12px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #navbar.nav-scrolled .nav-inner {
+      max-width: 860px;
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(0,0,0,0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 100px;
+      padding: 10px 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo img { height: 32px; }
+    .nav-logo-text {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--text-primary);
+    }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    .nav-links a {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-cta {
+      background: var(--accent) !important;
+      color: #fff !important;
+      padding: 8px 20px;
+      border-radius: 100px;
+      font-weight: 600 !important;
+      transition: all 0.2s !important;
+      box-shadow: 0 2px 12px rgba(var(--accent-rgb), 0.3);
+    }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(var(--accent-rgb), 0.4) !important; }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+    }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 32px 60px;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+    .hero-bg { position: absolute; inset: 0; pointer-events: none; }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+    }
+    .orb-1 {
+      width: 600px; height: 600px;
+      background: rgba(var(--accent-rgb), 0.12);
+      top: -200px; right: -150px;
+    }
+    .orb-2 {
+      width: 500px; height: 500px;
+      background: rgba(var(--accent-rgb), 0.08);
+      bottom: -200px; left: -150px;
+    }
+    .grid-overlay {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+    .hero-content { position: relative; z-index: 2; max-width: 760px; }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(var(--accent-rgb), 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(var(--accent-rgb), 0.2);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 24px;
+    }
+    .hero-title {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+    }
+    .hero-title span { color: var(--accent); }
+    .hero-subtitle {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 36px;
+      max-width: 580px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 1rem;
+      box-shadow: 0 4px 20px rgba(var(--accent-rgb), 0.35);
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      display: inline-block;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 28px rgba(var(--accent-rgb), 0.5);
+      transform: translateY(-2px);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-primary);
+      padding: 14px 32px;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .hero-trust {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .trust-stars { color: #f59e0b; font-size: 1rem; }
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px; left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      animation: bounce 2s ease-in-out infinite;
+    }
+    .scroll-arrow {
+      width: 20px; height: 20px;
+      border-right: 2px solid var(--text-muted);
+      border-bottom: 2px solid var(--text-muted);
+      transform: rotate(45deg);
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
+    }
+
+    /* ── SCROLL ANIMATION ── */
+    .scroll-animation {
+      height: 350vh;
+      position: relative;
+      z-index: 1;
+    }
+    .scroll-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+      background: #fff;
+    }
+    #frameCanvas {
+      position: absolute;
+      top: 0; left: 0;
+    }
+    @media (max-width: 1024px) { .scroll-animation { height: 300vh; } }
+    @media (max-width: 768px) { .scroll-animation { height: 250vh; } }
+
+    /* ── ANNOTATION CARDS ── */
+    .annotation-card {
+      position: absolute;
+      bottom: 8vh;
+      left: 5vw;
+      max-width: 340px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(var(--accent-rgb), 0.15);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 24px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+      z-index: 10;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    .annotation-card.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .card-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .card-title {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .card-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+    .card-stat-number {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .card-stat-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 2px;
+    }
+    @media (max-width: 768px) {
+      .annotation-card {
+        bottom: 1.5vh;
+        left: 2vw; right: 2vw;
+        max-width: none;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-radius: 14px;
+      }
+      .card-desc, .card-stat { display: none; }
+      .card-number { margin-bottom: 0; }
+      .card-title { font-size: 0.95rem; }
+    }
+
+    /* ── SPECS ── */
+    #specs {
+      background: var(--bg-soft);
+      position: relative;
+      z-index: 1;
+    }
+    .specs-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 100px 32px;
+    }
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 60px;
+    }
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 40px;
+      text-align: center;
+    }
+    .spec-item { display: flex; flex-direction: column; align-items: center; }
+    .spec-icon {
+      width: 48px; height: 48px;
+      background: rgba(var(--accent-rgb), 0.1);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+    }
+    .spec-number {
+      font-family: 'Nunito', sans-serif;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: block;
+      line-height: 1;
+      transition: color 0.3s, text-shadow 0.3s;
+    }
+    .spec-number.counting {
+      color: var(--accent);
+      text-shadow: 0 0 20px rgba(var(--accent-rgb), 0.25);
+    }
+    .spec-label {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      display: block;
+    }
+    @media (max-width: 768px) {
+      .specs-grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+      .spec-number { font-size: 2.2rem; }
+    }
+
+    /* ── FEATURES ── */
+    #features {
+      position: relative;
+      z-index: 1;
+      padding: 100px 32px;
+    }
+    .features-inner { max-width: 1100px; margin: 0 auto; }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 0;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px;
+      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(var(--accent-rgb), 0.25);
+      box-shadow: 0 12px 40px rgba(var(--accent-rgb), 0.08);
+    }
+    .feature-icon {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .feature-card h3 {
+      font-family: 'Nunito', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    @media (max-width: 900px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .features-grid { grid-template-columns: 1fr; } }
+
+    /* ── SERVICES ── */
+    #services {
+      background: var(--bg-soft);
+      position: relative;
+      z-index: 1;
+      padding: 100px 32px;
+    }
+    .services-inner { max-width: 1100px; margin: 0 auto; }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 48px;
+    }
+    .service-card {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 28px 20px;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .service-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 8px 28px rgba(var(--accent-rgb), 0.12);
+      transform: translateY(-3px);
+    }
+    .service-card-icon { font-size: 2.4rem; margin-bottom: 12px; display: block; }
+    .service-card h3 {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .service-card p { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+    .service-card-cta {
+      display: inline-block;
+      margin-top: 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    @media (max-width: 900px) { .services-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px) { .services-grid { grid-template-columns: 1fr; } }
+
+    /* ── TESTIMONIALS ── */
+    #testimonials {
+      position: relative;
+      z-index: 1;
+      padding: 100px 0;
+      overflow: hidden;
+    }
+    .testimonials-header { padding: 0 32px; max-width: 1100px; margin: 0 auto 48px; }
+    .testimonials-track {
+      display: flex;
+      gap: 20px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding: 16px 32px 24px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      cursor: grab;
+    }
+    .testimonials-track::-webkit-scrollbar { display: none; }
+    .testimonials-track:active { cursor: grabbing; }
+    .testimonial-card {
+      min-width: 320px;
+      max-width: 320px;
+      scroll-snap-align: start;
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 28px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      transition: box-shadow 0.3s;
+    }
+    .testimonial-card:hover { box-shadow: 0 8px 32px rgba(var(--accent-rgb), 0.1); }
+    .testimonial-stars { color: #00B67A; font-size: 1rem; margin-bottom: 12px; }
+    .testimonial-text {
+      font-size: 0.92rem;
+      color: var(--text-primary);
+      line-height: 1.6;
+      margin-bottom: 20px;
+      font-style: italic;
+    }
+    .testimonial-author { display: flex; align-items: center; gap: 10px; }
+    .author-avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-light));
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .author-name {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+    }
+    .author-role { font-size: 0.78rem; color: var(--text-muted); }
+
+    /* ── CTA ── */
+    #cta {
+      text-align: center;
+      padding: 120px 32px;
+      position: relative;
+      z-index: 1;
+      background: var(--bg-soft);
+      overflow: hidden;
+    }
+    .cta-orb {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(var(--accent-rgb), 0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta-content { position: relative; z-index: 2; max-width: 600px; margin: 0 auto; }
+    .cta-content h2 {
+      font-family: 'Nunito', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+    .cta-content p {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+    .btn-large { font-size: 1.1rem; padding: 18px 48px; border-radius: 14px; }
+
+    /* ── CARD SCANNER ── */
+    #card-scanner {
+      padding: 100px 32px;
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      background: var(--bg);
+    }
+    .scanner-inner { max-width: 1100px; margin: 0 auto; }
+    #scannerCanvas {
+      width: 100%;
+      max-width: 800px;
+      height: 400px;
+      display: block;
+      margin: 48px auto 0;
+      border-radius: 20px;
+      background: #0a0f0d;
+    }
+
+    /* ── PARTNERS ── */
+    #partners {
+      padding: 60px 32px;
+      background: var(--bg-soft);
+      position: relative; z-index: 1;
+      text-align: center;
+    }
+    .partners-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .partners-logos {
+      display: flex;
+      gap: 32px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .partner-item {
+      background: #fff;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .partner-item:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 60px 32px 40px;
+      position: relative; z-index: 1;
+      background: var(--bg);
+    }
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 48px;
+    }
+    .footer-brand img { height: 36px; margin-bottom: 16px; }
+    .footer-brand p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+    .footer-col h4 {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+    .footer-col a {
+      display: block;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      margin-bottom: 10px;
+      transition: color 0.2s;
+    }
+    .footer-col a:hover { color: var(--accent); }
+    .footer-bottom {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .footer-copy { font-size: 0.82rem; color: var(--text-muted); }
+    .footer-links-row { display: flex; gap: 20px; }
+    .footer-links-row a { font-size: 0.82rem; color: var(--text-muted); text-decoration: none; }
+    .footer-links-row a:hover { color: var(--accent); }
+    @media (max-width: 768px) {
+      .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+      .footer-bottom { flex-direction: column; text-align: center; }
+    }
+
+    /* ── CONFETTI ── */
+    .confetti-piece {
+      position: fixed;
+      width: 10px; height: 10px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 99999;
+      border-radius: 2px;
+    }
+
+    /* ── TRUSTPILOT BADGE ── */
+    .trustpilot-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-top: 16px;
+    }
+    .tp-stars { color: #00B67A; font-size: 0.9rem; }
+    .tp-score { font-weight: 700; color: var(--text-primary); }
+  </style>
+</head>
+<body>
+
+  <!-- Scroll Progress -->
+  <div id="scrollProgress"></div>
+
+  <!-- Starscape -->
+  <canvas id="starscape"></canvas>
+
+  <!-- Loader -->
+  <div id="loader">
+    <div class="loader-logo"><img src="logo.png" alt="AnyVan" /></div>
+    <p class="loader-text">Loading</p>
+    <div class="loader-bar-track">
+      <div class="loader-bar-fill" id="loaderBar"></div>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <img src="logo.png" alt="AnyVan" />
+      </a>
+      <div class="nav-links">
+        <a href="#features">Why AnyVan</a>
+        <a href="#services">Services</a>
+        <a href="#specs">Stats</a>
+        <a href="#testimonials">Reviews</a>
+        <a href="#cta" class="nav-cta">Get a Price</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section id="hero">
+    <div class="hero-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="grid-overlay"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge">★ The UK's Favourite Way to Move</div>
+      <h1 class="hero-title">Move <span>Anything</span>,<br />Anywhere</h1>
+      <p class="hero-subtitle">Find a price that's right up your street, from home removals to car transport — up to 40% cheaper than others.</p>
+      <div class="hero-buttons">
+        <a href="#cta" class="btn-primary confetti-trigger">Get Instant Prices</a>
+        <a href="#features" class="btn-secondary">See How It Works</a>
+      </div>
+      <div class="hero-trust">
+        <span class="trust-stars">★★★★★</span>
+        <span>Rated 4.6 / 5 · 192,028 reviews on Trustpilot</span>
+      </div>
+    </div>
+    <div class="scroll-hint">
+      <span>Scroll to explore</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- Scroll Animation -->
+  <section class="scroll-animation">
+    <div class="scroll-sticky">
+      <canvas id="frameCanvas"></canvas>
+
+      <div class="annotation-card" data-show="0.08" data-hide="0.28">
+        <div class="card-number">01 — HOME REMOVALS</div>
+        <div class="card-body">
+          <h3 class="card-title">Your Whole Home, Moved</h3>
+          <p class="card-desc">From a sofa down the road to a full house across the country — our expert teams handle it all with care.</p>
+          <div class="card-stat">
+            <span class="card-stat-number">40%</span>
+            <span class="card-stat-label">Cheaper than competitors</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="annotation-card" data-show="0.30" data-hide="0.50">
+        <div class="card-number">02 — MAN & VAN</div>
+        <div class="card-body">
+          <h3 class="card-title">Fast, Affordable Van Hire</h3>
+          <p class="card-desc">Need to move a few items? Our man and van service makes small moves simple and stress-free.</p>
+          <div class="card-stat">
+            <span class="card-stat-number">£30</span>
+            <span class="card-stat-label">Moves starting from</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="annotation-card" data-show="0.52" data-hide="0.72">
+        <div class="card-number">03 — CAR TRANSPORT</div>
+        <div class="card-body">
+          <h3 class="card-title">Vehicle Delivery, Done Right</h3>
+          <p class="card-desc">Swift, safe, and affordable car transport across the UK and Europe — door to door, every time.</p>
+          <div class="card-stat">
+            <span class="card-stat-number">5★</span>
+            <span class="card-stat-label">Rated moving teams</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="annotation-card" data-show="0.74" data-hide="0.94">
+        <div class="card-number">04 — PEACE OF MIND</div>
+        <div class="card-body">
+          <h3 class="card-title">Protected Every Mile</h3>
+          <p class="card-desc">Every booking includes £50k fire & theft cover as standard, plus 48-hour free cancellation.</p>
+          <div class="card-stat">
+            <span class="card-stat-number">£50k</span>
+            <span class="card-stat-label">Standard cover included</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Specs -->
+  <section id="specs">
+    <div class="specs-inner">
+      <p class="section-label">By the numbers</p>
+      <h2 class="section-title">Trusted by millions across the UK</h2>
+      <div class="specs-grid">
+        <div class="spec-item" data-target="2.5" data-suffix="M+">
+          <div class="spec-icon">👥</div>
+          <span class="spec-number">0</span>
+          <span class="spec-label">Happy Customers</span>
+        </div>
+        <div class="spec-item" data-target="192028" data-suffix="">
+          <div class="spec-icon">⭐</div>
+          <span class="spec-number">0</span>
+          <span class="spec-label">Trustpilot Reviews</span>
+        </div>
+        <div class="spec-item" data-target="40" data-suffix="%">
+          <div class="spec-icon">💰</div>
+          <span class="spec-number">0</span>
+          <span class="spec-label">Cheaper Than Others</span>
+        </div>
+        <div class="spec-item" data-target="48" data-suffix="hr">
+          <div class="spec-icon">🔄</div>
+          <span class="spec-number">0</span>
+          <span class="spec-label">Free Cancellation</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="features-inner">
+      <p class="section-label">Why AnyVan</p>
+      <h2 class="section-title">The smarter way to move</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">🚛</span>
+          <h3>5-Star Moving Teams</h3>
+          <p>Our verified moving experts are based throughout the UK, so they always understand your local moving needs — and show up ready to impress.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">💷</span>
+          <h3>Up to 40% Cheaper</h3>
+          <p>We fill empty van journeys already happening, passing the savings straight to you. And if you find a cheaper quote elsewhere, we'll price match it.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🔄</span>
+          <h3>48-Hour Cancellation</h3>
+          <p>Plans change — we get it. Edit or cancel your booking up to 2 days before your move with no questions asked and a full refund.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🛡️</span>
+          <h3>£50k Cover Included</h3>
+          <p>Every move comes with £50,000 fire and theft cover as standard. Peace of mind is built in, not bolted on.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <h3>Instant Online Prices</h3>
+          <p>Get a quote in under 2 minutes. Enter your details, see your price, book online — no phone calls, no waiting, no hassle.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🌍</span>
+          <h3>UK-Wide & European</h3>
+          <p>We cover every corner of the UK plus moves to and within Germany, France, Spain, Italy, and Ireland. Your move, wherever it takes you.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Services -->
+  <section id="services">
+    <div class="services-inner">
+      <p class="section-label">What we move</p>
+      <h2 class="section-title">A van for every move</h2>
+      <div class="services-grid">
+        <div class="service-card">
+          <span class="service-card-icon">🏠</span>
+          <h3>Home Removals</h3>
+          <p>Full house moves handled by expert removal teams</p>
+          <span class="service-card-cta">Get instant prices →</span>
+        </div>
+        <div class="service-card">
+          <span class="service-card-icon">🛋️</span>
+          <h3>Furniture</h3>
+          <p>Single item or whole room — we'll get it there safely</p>
+          <span class="service-card-cta">Get instant prices →</span>
+        </div>
+        <div class="service-card">
+          <span class="service-card-icon">🚗</span>
+          <h3>Car Transport</h3>
+          <p>Vehicle delivery across the UK and Europe</p>
+          <span class="service-card-cta">Get instant prices →</span>
+        </div>
+        <div class="service-card">
+          <span class="service-card-icon">📦</span>
+          <h3>Storage</h3>
+          <p>Short or long-term storage solutions nationwide</p>
+          <span class="service-card-cta">Get instant prices →</span>
+        </div>
+        <div class="service-card">
+          <span class="service-card-icon">🚐</span>
+          <h3>Man & Van</h3>
+          <p>Affordable van hire for smaller moves and deliveries</p>
+          <span class="service-card-cta">Get instant prices →</span>
+        </div>
+        <div class="service-card">
+          <span class="service-card-icon">🎹</span>
+          <h3>Piano Transport</h3>
+          <p>Specialist piano movers who treat your instrument with care</p>
+          <span class="service-card-cta">Get instant prices →</span>
+        </div>
+        <div class="service-card">
+          <span class="service-card-icon">🎓</span>
+          <h3>Student Removals</h3>
+          <p>Stress-free student moves between terms and cities</p>
+          <span class="service-card-cta">Get instant prices →</span>
+        </div>
+        <div class="service-card">
+          <span class="service-card-icon">🏢</span>
+          <h3>Office Removals</h3>
+          <p>Business relocations handled efficiently with minimal downtime</p>
+          <span class="service-card-cta">Get instant prices →</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section id="testimonials">
+    <div class="testimonials-header">
+      <p class="section-label">Real Reviews</p>
+      <h2 class="section-title">Loved by over 2.5 million customers</h2>
+    </div>
+    <div class="testimonials-track" id="testimonialsTrack">
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Excellent service from booking to delivery, reasonably priced and great communication. Will definitely use again — no stress at all!"</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">W</div>
+          <div>
+            <div class="author-name">Wendy</div>
+            <div class="author-role">Home Removal · 1 day ago</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"I have had a very good experience with your driver — very perfect and excellent. Harvinder and both drivers were impressive from start to finish."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">H</div>
+          <div>
+            <div class="author-name">Harrison Nwosu</div>
+            <div class="author-role">Verified Customer · 2 days ago</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Kay D was absolutely great — so patient and friendly, spent a good hour on the phone explaining everything. The actual move was seamless."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">A</div>
+          <div>
+            <div class="author-name">Angela Hattingh</div>
+            <div class="author-role">House Move · 2 days ago</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Great door to door same day service and excellent coordination from the office who kept me fully up to date on the delivery throughout."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">A</div>
+          <div>
+            <div class="author-name">Alan Brook</div>
+            <div class="author-role">Furniture Delivery · 2 days ago</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Excellent all-round service and definitely would recommend. The team were professional, careful with our belongings, and on time."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">H</div>
+          <div>
+            <div class="author-name">Huw Rees</div>
+            <div class="author-role">Home Removal · 5 days ago</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Impressive from start to finish! Booking was easy, the van arrived on time, and the movers were careful with everything. Highly recommend."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">C</div>
+          <div>
+            <div class="author-name">Catherine Oates</div>
+            <div class="author-role">Verified Customer · 3 days ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Card Scanner -->
+  <section id="card-scanner">
+    <div class="scanner-inner">
+      <p class="section-label">Technology</p>
+      <h2 class="section-title">Powered by smarter logistics</h2>
+      <p style="color:var(--text-secondary);max-width:540px;margin:0 auto;line-height:1.6;">Our platform matches your move with the most efficient transport already heading your way — cutting costs and wasted miles simultaneously.</p>
+      <canvas id="scannerCanvas"></canvas>
+    </div>
+  </section>
+
+  <!-- Partners -->
+  <section id="partners">
+    <p class="partners-label">Trusted by brands you know</p>
+    <div class="partners-logos">
+      <div class="partner-item">Vinted</div>
+      <div class="partner-item">Rightmove</div>
+      <div class="partner-item">eBay</div>
+      <div class="partner-item">Gumtree</div>
+      <div class="partner-item">Zoopla</div>
+      <div class="partner-item">Santander</div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="cta">
+    <div class="cta-orb"></div>
+    <div class="cta-content">
+      <p class="section-label">Get Moving</p>
+      <h2>Ready to move anything, anywhere?</h2>
+      <p>Get an instant price in under 2 minutes. No fuss, no phone calls — just great value moves from the UK's favourite transport platform.</p>
+      <button class="btn-primary btn-large confetti-trigger" onclick="fireConfetti(this)">Get Your Instant Price</button>
+      <div class="trustpilot-badge">
+        <span class="tp-stars">★★★★★</span>
+        <span class="tp-score">4.6</span>
+        <span>· 192,028 reviews on Trustpilot</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="logo.png" alt="AnyVan" />
+        <p>The UK's favourite way to move. Connecting customers with trusted transport partners across the UK and Europe since 2009.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <a href="#">Home Removals</a>
+        <a href="#">Man & Van</a>
+        <a href="#">Car Transport</a>
+        <a href="#">Storage</a>
+        <a href="#">Piano Transport</a>
+        <a href="#">Office Removals</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="#">About AnyVan</a>
+        <a href="#">How It Works</a>
+        <a href="#">Become a Driver</a>
+        <a href="#">Business</a>
+        <a href="#">Contact Us</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 AnyVan. All rights reserved.</p>
+      <div class="footer-links-row">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms & Conditions</a>
+        <a href="#">Cookies</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  // ── STARSCAPE ──
+  (function() {
+    const canvas = document.getElementById('starscape');
+    const ctx = canvas.getContext('2d');
+    const stars = [];
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    function initStars() {
+      stars.length = 0;
+      for (let i = 0; i < 120; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.2 + 0.3,
+          baseOpacity: Math.random() * 0.4 + 0.1,
+          driftX: (Math.random() - 0.5) * 0.015,
+          driftY: (Math.random() - 0.5) * 0.008,
+          twinkleSpeed: Math.random() * 0.0008 + 0.0003,
+          twinklePhase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(s => {
+        s.x += s.driftX; s.y += s.driftY;
+        if (s.x < 0) s.x = canvas.width;
+        if (s.x > canvas.width) s.x = 0;
+        if (s.y < 0) s.y = canvas.height;
+        if (s.y > canvas.height) s.y = 0;
+        const twinkle = Math.sin(Date.now() * s.twinkleSpeed + s.twinklePhase);
+        const op = Math.max(0, s.baseOpacity + twinkle * 0.2);
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(59,181,234,${op})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(animate);
+    }
+    resize(); initStars(); animate();
+    window.addEventListener('resize', () => { resize(); initStars(); });
+  })();
+
+  // ── SCROLL PROGRESS ──
+  const scrollProgress = document.getElementById('scrollProgress');
+  window.addEventListener('scroll', () => {
+    const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+    scrollProgress.style.width = pct + '%';
+  }, { passive: true });
+
+  // ── NAVBAR ──
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('nav-scrolled', window.scrollY > 80);
+  }, { passive: true });
+
+  // ── FRAME SEQUENCE ──
+  const frameCount = 100;
+  const frames = [];
+  let loadedCount = 0;
+  const loaderBar = document.getElementById('loaderBar');
+  const loader = document.getElementById('loader');
+  const canvas = document.getElementById('frameCanvas');
+  const ctx = canvas.getContext('2d');
+  let currentFrame = -1;
+  let ticking = false;
+
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    if (currentFrame >= 0) drawFrame(currentFrame);
+  }
+
+  function drawFrame(index) {
+    const img = frames[index];
+    if (!img || !img.complete) return;
+    const dpr = window.devicePixelRatio || 1;
+    const cw = canvas.width, ch = canvas.height;
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cw, ch);
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    const canvasRatio = cw / ch;
+    let drawW, drawH, drawX, drawY;
+    if (window.innerWidth > 768) {
+      if (canvasRatio > imgRatio) { drawW = cw; drawH = cw / imgRatio; }
+      else { drawH = ch; drawW = ch * imgRatio; }
+    } else {
+      const zoom = 1.15;
+      if (canvasRatio > imgRatio) { drawH = ch * zoom; drawW = drawH * imgRatio; }
+      else { drawW = cw * zoom; drawH = drawW / imgRatio; }
+    }
+    drawX = (cw - drawW) / 2;
+    drawY = (ch - drawH) / 2;
+    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+  }
+
+  function onAllFramesLoaded() {
+    loader.style.opacity = '0';
+    loader.style.transition = 'opacity 0.6s ease';
+    setTimeout(() => { loader.style.display = 'none'; }, 600);
+    drawFrame(0);
+  }
+
+  for (let i = 1; i <= frameCount; i++) {
+    const img = new Image();
+    img.src = `frames/frame_${String(i).padStart(4, '0')}.jpg`;
+    img.onload = () => {
+      loadedCount++;
+      loaderBar.style.width = (loadedCount / frameCount * 100) + '%';
+      if (loadedCount === frameCount) onAllFramesLoaded();
+    };
+    img.onerror = () => {
+      loadedCount++;
+      loaderBar.style.width = (loadedCount / frameCount * 100) + '%';
+      if (loadedCount === frameCount) onAllFramesLoaded();
+    };
+    frames.push(img);
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // ── ANNOTATION CARDS + SNAP-STOP ──
+  const HOLD_DURATION = 600;
+  let isSnapping = false;
+  const cards = document.querySelectorAll('.annotation-card');
+  const snapZones = Array.from(cards).map(card => ({
+    show: parseFloat(card.dataset.show),
+    hide: parseFloat(card.dataset.hide),
+    snapped: false
+  }));
+
+  function updateCards(progress) {
+    cards.forEach((card, i) => {
+      const zone = snapZones[i];
+      const visible = progress >= zone.show && progress <= zone.hide;
+      card.classList.toggle('visible', visible);
+      if (visible && !zone.snapped && !isSnapping) {
+        zone.snapped = true;
+        isSnapping = true;
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => {
+          document.body.style.overflow = '';
+          isSnapping = false;
+        }, HOLD_DURATION);
+      }
+      if (!visible) zone.snapped = false;
+    });
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        const section = document.querySelector('.scroll-animation');
+        const rect = section.getBoundingClientRect();
+        const scrollable = section.offsetHeight - window.innerHeight;
+        const progress = Math.min(1, Math.max(0, -rect.top / scrollable));
+        const frameIndex = Math.min(frameCount - 1, Math.floor(progress * frameCount));
+        if (frameIndex !== currentFrame) {
+          currentFrame = frameIndex;
+          drawFrame(frameIndex);
+        }
+        updateCards(progress);
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  // ── SPECS COUNT-UP ──
+  function easeOutExpo(t) { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+
+  function countUp(el, target, suffix, duration) {
+    const start = performance.now();
+    el.classList.add('counting');
+    function update(now) {
+      const p = Math.min((now - start) / duration, 1);
+      const v = easeOutExpo(p) * target;
+      if (target >= 1000) {
+        el.textContent = Math.floor(v).toLocaleString() + suffix;
+      } else if (target % 1 !== 0) {
+        el.textContent = v.toFixed(1) + suffix;
+      } else {
+        el.textContent = Math.floor(v) + suffix;
+      }
+      if (p < 1) { requestAnimationFrame(update); }
+      else {
+        el.textContent = (target >= 1000 ? target.toLocaleString() : (target % 1 !== 0 ? target.toFixed(1) : target)) + suffix;
+        el.classList.remove('counting');
+      }
+    }
+    requestAnimationFrame(update);
+  }
+
+  const specObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.spec-item').forEach((item, i) => {
+          setTimeout(() => {
+            countUp(item.querySelector('.spec-number'), parseFloat(item.dataset.target), item.dataset.suffix || '', 2000);
+          }, i * 200);
+        });
+        specObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  specObserver.observe(document.getElementById('specs'));
+
+  // ── TESTIMONIALS DRAG-TO-SCROLL ──
+  const track = document.getElementById('testimonialsTrack');
+  let isDragging = false, startX, scrollLeft;
+  track.addEventListener('mousedown', e => { isDragging = true; startX = e.pageX - track.offsetLeft; scrollLeft = track.scrollLeft; track.style.cursor = 'grabbing'; });
+  track.addEventListener('mouseleave', () => { isDragging = false; track.style.cursor = 'grab'; });
+  track.addEventListener('mouseup', () => { isDragging = false; track.style.cursor = 'grab'; });
+  track.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    e.preventDefault();
+    track.scrollLeft = scrollLeft - (e.pageX - track.offsetLeft - startX);
+  });
+
+  // ── CONFETTI ──
+  const COLORS = ['#3BB5EA','#63C7F0','#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#f77f00'];
+  function fireConfetti(btn) {
+    const rect = btn ? btn.getBoundingClientRect() : { left: window.innerWidth/2, top: window.innerHeight/2, width: 0, height: 0 };
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    for (let i = 0; i < 80; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      const size = Math.random() * 8 + 6;
+      const isCircle = Math.random() > 0.5;
+      el.style.cssText = `
+        left:${cx}px; top:${cy}px;
+        width:${size}px; height:${size}px;
+        background:${color};
+        border-radius:${isCircle ? '50%' : '2px'};
+        transform:rotate(${Math.random()*360}deg);
+        opacity:1;
+      `;
+      document.body.appendChild(el);
+      const angle = (Math.random() * 360) * (Math.PI / 180);
+      const velocity = Math.random() * 400 + 150;
+      const vx = Math.cos(angle) * velocity;
+      const vy = Math.sin(angle) * velocity - 200;
+      let startTime = null;
+      const duration = Math.random() * 1200 + 800;
+      function animatePiece(ts) {
+        if (!startTime) startTime = ts;
+        const elapsed = ts - startTime;
+        const t = elapsed / duration;
+        if (t >= 1) { el.remove(); return; }
+        const x = cx + vx * t;
+        const y = cy + vy * t + 0.5 * 800 * t * t;
+        el.style.left = x + 'px';
+        el.style.top = y + 'px';
+        el.style.opacity = 1 - t;
+        el.style.transform = `rotate(${t * 720}deg)`;
+        requestAnimationFrame(animatePiece);
+      }
+      requestAnimationFrame(animatePiece);
+    }
+  }
+
+  document.querySelectorAll('.confetti-trigger').forEach(el => {
+    el.addEventListener('click', function() { fireConfetti(this); });
+  });
+
+  // ── THREE.JS CARD SCANNER ──
+  (function() {
+    const canvas = document.getElementById('scannerCanvas');
+    const section = document.getElementById('card-scanner');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x0a0f0d, 1);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+    camera.position.set(0, 0, 5);
+
+    const PARTICLE_COUNT = 3000;
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    const targets = new Float32Array(PARTICLE_COUNT * 3);
+    const colors = new Float32Array(PARTICLE_COUNT * 3);
+
+    const cols = 60, rows = 50;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      targets[i * 3] = (col / cols - 0.5) * 6;
+      targets[i * 3 + 1] = (row / rows - 0.5) * 5;
+      targets[i * 3 + 2] = 0;
+      positions[i * 3] = (Math.random() - 0.5) * 20;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
+      const t = i / PARTICLE_COUNT;
+      colors[i * 3] = 0.23 + t * 0.15;
+      colors[i * 3 + 1] = 0.71 + t * 0.1;
+      colors[i * 3 + 2] = 0.92 - t * 0.05;
+    }
+
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.PointsMaterial({
+      size: 0.05,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85
+    });
+    const points = new THREE.Points(geometry, material);
+    scene.add(points);
+
+    let animated = false;
+    let animProgress = 0;
+
+    const scanObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && !animated) { animated = true; }
+      });
+    }, { threshold: 0.3 });
+    scanObserver.observe(section);
+
+    function resizeScanner() {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    resizeScanner();
+    window.addEventListener('resize', resizeScanner);
+
+    function animateScanner() {
+      requestAnimationFrame(animateScanner);
+      const pos = geometry.attributes.position.array;
+      if (animated && animProgress < 1) {
+        animProgress = Math.min(animProgress + 0.008, 1);
+        const ease = 1 - Math.pow(1 - animProgress, 3);
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          pos[i * 3] += (targets[i * 3] - pos[i * 3]) * ease * 0.06;
+          pos[i * 3 + 1] += (targets[i * 3 + 1] - pos[i * 3 + 1]) * ease * 0.06;
+          pos[i * 3 + 2] += (targets[i * 3 + 2] - pos[i * 3 + 2]) * ease * 0.06;
+        }
+        geometry.attributes.position.needsUpdate = true;
+      }
+      points.rotation.y += 0.003;
+      renderer.render(scene, camera);
+    }
+    animateScanner();
+  })();
+  </script>
+</body>
+</html>
