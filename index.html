@@ -4,11 +4,52 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Move Anything Anywhere. FREE Delivery Quotes - AnyVan.com</title>
+  <meta name="description" content="AnyVan — the UK's favourite way to move. Get instant prices on home removals, man & van, car transport and more. Up to 40% cheaper, rated 4.6★ on Trustpilot with 192,028 reviews.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://anyvan-scroll-stop.vercel.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Move Anything Anywhere. FREE Delivery Quotes — AnyVan.com">
+  <meta property="og:description" content="Get instant prices on home removals, man & van, car transport and more. Up to 40% cheaper than traditional removal companies. Rated 4.6★ on Trustpilot.">
+  <meta property="og:url" content="https://anyvan-scroll-stop.vercel.app/">
+  <meta property="og:site_name" content="AnyVan">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Move Anything Anywhere — AnyVan.com">
+  <meta name="twitter:description" content="Instant prices on home removals, van hire, car transport and more. Up to 40% cheaper than traditional removal companies.">
   <link rel="icon" href="https://anyvan.com/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://anyvan-scroll-stop.vercel.app/#website",
+        "url": "https://anyvan-scroll-stop.vercel.app/",
+        "name": "AnyVan",
+        "description": "The UK's favourite way to move. Get instant prices on home removals, man & van, car transport and more."
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://anyvan-scroll-stop.vercel.app/#organization",
+        "name": "AnyVan",
+        "url": "https://anyvan-scroll-stop.vercel.app/",
+        "logo": "https://www.anyvan.com/images/cust/AnyVanLogo.svg",
+        "foundingDate": "2009",
+        "telephone": "+442038723050",
+        "address": { "@type": "PostalAddress", "addressCountry": "GB" },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.6",
+          "bestRating": "5",
+          "ratingCount": "192028"
+        }
+      }
+    ]
+  }
+  </script>
   <style>
     :root {
       --accent: #2487c0;
@@ -52,11 +93,20 @@
     .nav-logo img { height: 26px; display: block; }
     .nav-links { display: flex; align-items: center; gap: 28px; }
     .nav-links a { font-size: 0.88rem; font-weight: 700; color: var(--text-secondary); text-decoration: none; transition: color 0.2s; }
-    .nav-links a:hover { color: var(--accent); }
+    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
     .nav-phone { color: var(--accent-dark) !important; }
     .nav-cta { background: var(--accent-dark) !important; color: #fff !important; padding: 10px 22px; border-radius: 6px; font-size: 0.85rem !important; transition: background 0.2s !important; }
     .nav-cta:hover { background: var(--accent) !important; color: #fff !important; }
-    @media (max-width: 768px) { .nav-links { display: none; } }
+    .nav-hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; background: none; border: none; }
+    .nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--text-secondary); border-radius: 2px; transition: all 0.3s; }
+    .nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav-hamburger.open span:nth-child(2) { opacity: 0; }
+    .nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .nav-mobile-menu { display: none; position: absolute; top: 100%; left: 0; right: 0; background: rgba(255,255,255,0.98); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); padding: 8px 28px 20px; flex-direction: column; gap: 0; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .nav-mobile-menu a { font-size: 0.95rem; font-weight: 700; color: var(--text-secondary); text-decoration: none; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.05); display: block; }
+    .nav-mobile-menu a:last-child { border-bottom: none; color: var(--accent-dark); }
+    .nav-mobile-menu.open { display: flex; }
+    @media (max-width: 768px) { .nav-links { display: none; } .nav-hamburger { display: flex; } }
 
     /* HERO */
     #hero { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 120px 24px 80px; position: relative; overflow: hidden; z-index: 1; background: linear-gradient(150deg, #edf6fc 0%, #ffffff 55%); }
@@ -224,15 +274,28 @@
   <!-- Navbar -->
   <nav id="navbar">
     <div class="nav-inner">
-      <a href="#" class="nav-logo">
+      <a href="index.html" class="nav-logo">
         <img src="https://www.anyvan.com/images/cust/AnyVanLogo.svg" alt="AnyVan" onerror="this.src='logo.png'" />
       </a>
       <div class="nav-links">
-        <a href="#features">Our services</a>
-        <a href="#testimonials">Reviews</a>
+        <a href="index.html" class="active">Home</a>
+        <a href="about.html">About</a>
+        <a href="testimonials.html">Reviews</a>
+        <a href="team.html">Our Team</a>
         <a href="tel:02038723050" class="nav-phone">0203 872 3050</a>
         <a href="#cta" class="nav-cta confetti-trigger">Get an instant price</a>
       </div>
+      <button class="nav-hamburger" id="navHamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="nav-mobile-menu" id="navMobile">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="testimonials.html">Reviews</a>
+      <a href="team.html">Our Team</a>
+      <a href="tel:02038723050">0203 872 3050</a>
+      <a href="#cta">Get an instant price</a>
     </div>
   </nav>
 
@@ -444,9 +507,9 @@
       </div>
       <div class="footer-col">
         <h4>Features</h4>
-        <a href="#">Get Quotes</a>
-        <a href="#">FAQs</a>
-        <a href="#">Students</a>
+        <a href="#cta">Get Quotes</a>
+        <a href="#features">FAQs</a>
+        <a href="#cta">Students</a>
       </div>
       <div class="footer-col">
         <h4>Resources</h4>
@@ -456,9 +519,9 @@
       </div>
       <div class="footer-col">
         <h4>Company</h4>
-        <a href="#">About Us</a>
+        <a href="about.html">About Us</a>
         <a href="#">Contact Us</a>
-        <a href="#">Careers</a>
+        <a href="team.html">Careers</a>
         <a href="#">Press</a>
       </div>
     </div>
@@ -489,6 +552,10 @@
   // NAVBAR
   const nb=document.getElementById('navbar');
   window.addEventListener('scroll',()=>{nb.classList.toggle('nav-scrolled',window.scrollY>60);},{passive:true});
+
+  // HAMBURGER
+  const ham=document.getElementById('navHamburger'),mob=document.getElementById('navMobile');
+  ham.addEventListener('click',()=>{ham.classList.toggle('open');mob.classList.toggle('open');});
 
   // FRAME SEQUENCE
   const frameCount=100,frames=[],canvas=document.getElementById('frameCanvas'),ctx=canvas.getContext('2d');
@@ -526,7 +593,8 @@
 
   // CONFETTI
   const COLS=['#2487c0','#41a5dd','#034666','#ffd83a','#6bcb77','#ff6b6b','#f77f00'];
-  function fireConfetti(btn){const r=btn?btn.getBoundingClientRect():{left:window.innerWidth/2,top:window.innerHeight/2,width:0,height:0},cx=r.left+r.width/2,cy=r.top+r.height/2;for(let i=0;i<80;i++){const el=document.createElement('div');el.className='confetti-piece';const col=COLS[Math.floor(Math.random()*COLS.length)],sz=Math.random()*8+6;el.style.cssText=`left:${cx}px;top:${cy}px;width:${sz}px;height:${sz}px;background:${col};border-radius:${Math.random()>.5?'50%':'2px'};opacity:1;`;document.body.appendChild(el);const ang=Math.random()*Math.PI*2,vel=Math.random()*400+150,vx=Math.cos(ang)*vel,vy=Math.sin(ang)*vel-200,dur=Math.random()*1200+800;let t0=null;(function a(ts){if(!t0)t0=ts;const t=(ts-t0)/dur;if(t>=1){el.remove();return;}el.style.left=(cx+vx*t)+'px';el.style.top=(cy+vy*t+400*t*t)+'px';el.style.opacity=1-t;el.style.transform=`rotate(${t*720}deg)`;requestAnimationFrame(a);})(performance.now());}}
+  function fireConfetti(btn){const r=btn?btn.getBoundingClientRect():{left:window.innerWidth/2,top:window.innerHeight/2,width:0,height:0},cx=r.left+r.width/2,cy=r.top+r.height/2;for(let i=0;i<80;i++){const el=document.createElement('div');el.className='confetti-piece';const col=COLS[Math.floor(Math.random()*COLS.length)],sz=Math.random()*8+6;el.style.cssText=`left:${cx}px;top:${cy}px;width:${sz}px;height:${sz}px;background:${col};border-radius:${Math.random()>.5?'50%':'2px'};opacity:1;`;document.body.appendChild(el);const ang=Math.random()*Math.PI*2,vel=Math.random()*400+150,vx=Math.cos(ang)*vel,vy=Math.sin(ang)*vel-200,dur=Math.random()*1200+800;let t0=null;(function a(ts){if(!t0)t0=ts;const t=(ts-t0)/dur;if(t>=1){el.remove();return;}el.style.left=(cx+vx*t)+'px';el.style.top=(cy+vy*t+400*t*t)+'px';el.style.opacity=1-t;el.style.transform=`rotate(${t*720}deg)`;requestAnimationFrame(a);})(performance.now());}
+  }
   document.querySelectorAll('.confetti-trigger').forEach(el=>el.addEventListener('click',function(){fireConfetti(this);}));
 
   // THREE.JS SCANNER
